@@ -24,7 +24,7 @@ jobs:
         git config --global user.name "qwq233"
     - name: Load upstream commits
       run:
-        git pull https://github.com/Dr-TSNG/Hide-My-Applist master --ff
+        git pull https://github.com/Dr-TSNG/ApplistDetector master --ff
     - name: Apply commit changes
       run: |
         if [ -f ./.git/MERGE_MSG ]; then
