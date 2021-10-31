@@ -59,12 +59,22 @@ jobs:
           ./gradlew :app:assembleDebug
           echo "::set-output name=debugName::`ls app/build/outputs/apk/debug/*-debug.apk | awk -F '(/|.apk)' '{print $6}'`"
 
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_app
+        with:
+          releaseDirectory: app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.SIGN_FILE_BASE64 }}
+          alias: ${{ secrets.SIGN_ALIAS }}
+          keyStorePassword: ${{ secrets.SIGN_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.SIGN_KEY_PASSWORD }}
+
       - name: Upload release
         if: success()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ steps.buildRelease.outputs.releaseName }}
-          path: "app/build/outputs/apk/release/*.apk"
+          path: ${{steps.sign_app.outputs.signedReleaseFile}}
 
       - name: Upload debug
         if: success()
