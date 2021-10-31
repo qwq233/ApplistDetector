@@ -69,18 +69,22 @@ jobs:
           keyStorePassword: ${{ secrets.SIGN_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.SIGN_KEY_PASSWORD }}
 
+      - name: Get Date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
       - name: Upload release
         if: success()
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ steps.buildRelease.outputs.releaseName }}
+          name: applist_detector_snapshot_release_${{ steps.date.outputs.date }}.apk
           path: ${{steps.sign_app.outputs.signedReleaseFile}}
 
       - name: Upload debug
         if: success()
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ steps.buildDebug.outputs.debugName }}
+          name: applist_detector_snapshot_debug_${{ steps.date.outputs.date }}.apk
           path: "app/build/outputs/apk/debug/*.apk"
 
       - name: Upload mappings
@@ -98,7 +102,7 @@ jobs:
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           OUTPUT="app/build/outputs/apk/"
-          export release=$(find $OUTPUT -name "*-release.apk")
+          export release=${{steps.sign_app.outputs.signedReleaseFile}}
           export debug=$(find $OUTPUT -name "*-debug.apk")
           ESCAPED=`python3 -c 'import json,os,urllib.parse; msg = json.dumps(os.environ["COMMIT_MESSAGE"]); print(urllib.parse.quote(msg if len(msg) <= 1024 else json.dumps(os.environ["COMMIT_URL"])))'`
           curl -v "https://api.telegram.org/bot${BOT_TOKEN}/sendMediaGroup?chat_id=${CHANNEL_ID}&media=%5B%7B%22type%22:%22document%22,%20%22media%22:%22attach://release%22%7D,%7B%22type%22:%22document%22,%20%22media%22:%22attach://debug%22,%22caption%22:${ESCAPED}%7D%5D"  -F release="@$release" -F debug="@$debug"
